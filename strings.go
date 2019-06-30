@@ -1,23 +1,12 @@
 package main
 import (
-	//"fmt"
-	//"os"
-	//"reflect"
-	"sort"
 	"strings"
 	"unicode"
-	//"unicode/utf8"
 )
 
 func fieldsN(s string, n int) []string {
 	wasSpace:=true
 	count:=0
-/*
-	if r, _ := utf8.DecodeRuneInString(s); !unicode.IsSpace(r) {
-		s = "^" + s
-	}
-	s+=" $"
-*/
 	return fieldsFunc(s, func(r rune) bool {
 		if count<n {
 			if !unicode.IsSpace(r) {
@@ -73,18 +62,20 @@ func fieldsFunc(s string, f func(rune) bool) []string {
 	if len(spans)==0 {
 		spans = append(spans, span{0, 0})
 	}
-	switch spansLen:=len(spans); spansLen {
-	case 1:
+	if spansLen:=len(spans); spansLen==1 {
 		emptySpan := span{spans[0].end, spans[0].end}
 		for i:=spansLen; i<3; i++ {
 			spans = append(spans, emptySpan)
 		}
-	case 2:
-		spans = append(spans, spans[1])
-	default:
-		if s[spans[1].start:spans[1].end]!="=" {
+	} else {
+		if spansLen == 2 {
+			spans = append(spans, spans[1])
+			spans[1].end = spans[1].start
+		} else if s[spans[1].start:spans[1].end]!="=" {
 			spans[2].start = spans[1].start
+			spans[1].end = spans[1].start
 		}
+		//s = s[:spans[2].start] + strings.ToLower(s[spans[2].start:])
 	}
 
 	// Create strings from recorded field indices.
@@ -102,15 +93,3 @@ func fieldsFunc(s string, f func(rune) bool) []string {
 	return a
 }
 
-/*
-func capBulder(sb strings.Builder) int {
-	return reflect.ValueOf(sb).FieldByName("buf").Cap()
-}
-*/
-
-type stringSet []string
-
-func makeStringSet(strings []string) stringSet {
-	sort.Strings(strings)
-	return strings
-}
