@@ -208,13 +208,15 @@ func (g *game) executeCommand(command *command) {
 	if len(command.embeddedInteractions)>0 && command.roomIdToGoto=="" {
 		//fmt.Fprintf(os.Stderr, "%#v\n\n", command)
 		print := func(i int, string string) {
-			fmt.Printf("%2v|%v\n", i, string)
+			fmt.Printf("Номер %v: %v\n", i, string)
 		}
 		isThereAnySatisfied := false
 		command.embeddedInteractions.forEachSatisfiedBy(g.FlagsMap,
 			func(choiceNº int, action *action) (breakLoop bool) {
 				if !(choiceNº < 0) {
 					isThereAnySatisfied = true
+				} else {
+					return
 				}
 				print(choiceNº, action.outputText[:strings.IndexByte(action.outputText, '\n')])
 				return
