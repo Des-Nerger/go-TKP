@@ -234,9 +234,17 @@ func (g *game) executeAction(action *action) {
 		if g.currentRoom.title != "" {
 			fmt.Printf("Место действия: %v.\n", g.currentRoom.title)
 		}
-		g.executeCommand(g.findCommand([]string{"описание"}))
+		descCommand := g.findCommand([]string{"описание"})
+		_, descAlreadyExecuted := g.FlagsMap[descriptionId(g.CurrentRoomId, descCommand.action.conditionFlags)]
+		if descAlreadyExecuted {
+			fmt.Println()
+			return
+		}
+		g.executeCommand(descCommand)
 	}
 }
+
+func descriptionId(roomId string, conditionFlags flags) string {return roomId + " " + conditionFlags.String()}
 
 func (g *game) executeCommand(command *command) {
 	g.executeAction(&command.action)
@@ -386,7 +394,7 @@ func (r *room) load(roomId string) {
 			switch lineFields[0] {
 			case "^ОП":
 				addNewCommand("описание", true)
-				(*currentAction).conditionFlags = parseFlags(lineFields[2])
+				currentAction.conditionFlags = parseFlags(lineFields[2])
 				stack.push(innerLevel)
 			case "^Т":
 				addNewCommand(lineFields[2], false)
@@ -429,22 +437,32 @@ func (r *room) load(roomId string) {
 		case innerLevel:
 			switch lineFields[0] {
 			case "^Л":
-				(*currentAction).conditionFlags = parseFlags(lineFields[2])
+				currentAction.conditionFlags = parseFlags(lineFields[2])
 			case "^Д":
-				(*currentAction).setFlags = parseFlags(lineFields[2])
+				currentAction.setFlags = parseFlags(lineFields[2])
 			case "^ВЕР":
 				lineFields2Fields := strings.Fields(lineFields[2])
 				probability, _ := strconv.Atoi(lineFields2Fields[1])
-				(*currentAction).randomlySetFlags = append((*currentAction).randomlySetFlags,
+				currentAction.randomlySetFlags = append(currentAction.randomlySetFlags,
 					randomlySetFlag{key:lineFields2Fields[0], probability:uint8(probability)})
 			case "^ИД":
-				(*currentAction).roomIdToGoto = lineFields[2]
+				currentAction.roomIdToGoto = lineFields[2]
 			case "^СС":
-				(*currentAction).ССCount++
+				currentAction.ССCount++
 			case "^СТ":
-				(*currentAction).СТCount++
-			case "^ДИ", "^", "^КДИАЛ":
-				(*currentAction).outputText = stringsBuilder.String()
+				currentAction.СТCount++
+			case "^":
+				if bool(currentAction == &currentCommand.action &&
+					currentCommand.patternIsExact &&
+					len(currentCommand.patternWords)==1 &&
+					currentCommand.patternWords[0] == patternWord{string: "описание", mask: 0},
+				) {
+					currentAction.setFlags = append(currentAction.setFlags,
+						flag{descriptionId(roomId, currentAction.conditionFlags), true})
+				}
+				fallthrough
+			case "^ДИ", "^КДИАЛ":
+				currentAction.outputText = stringsBuilder.String()
 				stringsBuilder.Reset()
 				stack.removeTop()
 				continue
