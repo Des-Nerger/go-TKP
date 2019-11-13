@@ -13,7 +13,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		inputLine := scanner.Text()
-		if inputLine == "\x18" {os.Stdout.WriteString(inputLine); continue}
+		if inputLine == "\x03" {os.Stdout.WriteString(inputLine); continue}
 		command := g.findCommand(strings.Fields(
 			strings.Replace(strings.ToLower(inputLine), "ё", "е", -1),
 		))

@@ -23,7 +23,7 @@ func main() {
 			b, err := r.ReadByte()
 			switch err {
 			case nil:
-				if b == 0x18 {
+				if b == 0x03 {
 					cond.L.Lock()
 					queue.sentences = queue.sentences[:0]
 					queue.position = 0
