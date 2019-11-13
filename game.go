@@ -32,7 +32,7 @@ type room struct {
 }
 
 type flagsMap map[string]struct{}
-func (fm flagsMap) satisfiesConditions(conditionFlags []flag) bool {
+func (fm flagsMap) satisfiesConditions(conditionFlags flags) bool {
 	for _, conditionFlag := range conditionFlags {
 		_, ok := fm[conditionFlag.key]
 		if ok != conditionFlag.value {return false}
@@ -110,7 +110,7 @@ func (ei *embeddedInteractions) forEachSatisfiedBy(fm flagsMap,
 }
 
 type action struct {
-	conditionFlags, setFlags []flag
+	conditionFlags, setFlags flags
 	randomlySetFlags []randomlySetFlag
 	ССCount, СТCount uint8
 	outputText string
@@ -122,6 +122,41 @@ const (
 	firstCharWasPercent patternWordMask = iota + 1
 	lastCharWasPercent
 )
+
+type flags []flag
+func parseFlags(string string) (flags flags) {
+	for _, string := range strings.Fields(string) {
+		flags = append(flags,
+			func() flag {
+				if string[0] == '-' {
+					return flag{key: string[1:], value: false}
+				}
+				return flag{key: string, value: true}
+			} (),
+		)
+	}
+	return
+}
+func (flags flags) String() string {
+	if len(flags)==0 {return ""}
+	var strlen, i int
+	for {
+		flag := flags[i]
+		strlen += func()int{if !flag.value {return 1}; return 0}() + len(flag.key)
+		i++; if i>=len(flags) {break}
+		strlen += 1
+	}
+	sb := strings.Builder{}; sb.Grow(strlen)
+	i = 0
+	for {
+		flag := flags[i]
+		if !flag.value {sb.WriteByte('-')}
+		sb.WriteString(flag.key)
+		i++; if i>=len(flags) {break}
+		sb.WriteByte(' ')
+	}
+	return sb.String()
+}
 
 type flag struct {
 	key string
@@ -332,19 +367,6 @@ func (r *room) load(roomId string) {
 			setPatternWords(string)
 			currentAction = &currentCommand.action
 			interactions = &currentCommand.embeddedInteractions
-		}
-		parseFlags = func(string string) (flags []flag) {
-			for _, string := range strings.Fields(string) {
-				flags = append(flags,
-					func() flag {
-						if string[0] == '-' {
-							return flag{key: string[1:], value: false}
-						}
-						return flag{key: string, value: true}
-					} (),
-				)
-			}
-			return
 		}
 		stringsBuilder strings.Builder
 	)
